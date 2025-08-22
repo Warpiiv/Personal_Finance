@@ -66,8 +66,8 @@ def initialize_app_data(app):
                                 'session_id': {'bsonType': ['string', 'null']},
                                 'list_id': {'bsonType': 'string'},
                                 'name': {'bsonType': 'string'},
-                                'quantity': {'bsonType': 'int', 'minimum': 1, 'maximum': 1000},
-                                'price': {'bsonType': 'double', 'minimum': 0, 'maximum': 1000000},
+                                'quantity': {'bsonType': ['double', 'int'], 'minimum': 1, 'maximum': 1000},
+                                'price': {'bsonType': ['double', 'int'], 'minimum': 0, 'maximum': 1000000},
                                 'category': {'enum': ['fruits', 'vegetables', 'dairy', 'meat', 'grains', 'beverages', 'household', 'other']},
                                 'status': {'enum': ['to_buy', 'bought']},
                                 'created_at': {'bsonType': 'date'},
@@ -92,14 +92,14 @@ def initialize_app_data(app):
                                 'name': {'bsonType': 'string'},
                                 'user_id': {'bsonType': 'string'},
                                 'session_id': {'bsonType': ['string', 'null']},
-                                'budget': {'bsonType': 'double', 'minimum': 0.01, 'maximum': 10000000000},
+                                'budget': {'bsonType': ['double', 'int'], 'minimum': 0.01, 'maximum': 10000000000},
                                 'created_at': {'bsonType': 'date'},
                                 'updated_at': {'bsonType': 'date'},
                                 'collaborators': {
                                     'bsonType': 'array',
                                     'items': {'bsonType': 'string'}
                                 },
-                                'total_spent': {'bsonType': 'double', 'minimum': 0},
+                                'total_spent': {'bsonType': ['double', 'int'], 'minimum': 0},
                                 'status': {'enum': ['active', 'saved']}
                             }
                         }
@@ -116,17 +116,17 @@ def initialize_app_data(app):
                             'properties': {
                                 'user_id': {'bsonType': 'string'},
                                 'session_id': {'bsonType': ['string', 'null']},
-                                'income': {'bsonType': 'double', 'minimum': 0},
-                                'fixed_expenses': {'bsonType': 'double', 'minimum': 0},
-                                'variable_expenses': {'bsonType': 'double', 'minimum': 0},
-                                'savings_goal': {'bsonType': 'double', 'minimum': 0},
-                                'surplus_deficit': {'bsonType': 'double'},
-                                'housing': {'bsonType': 'double', 'minimum': 0},
-                                'food': {'bsonType': 'double', 'minimum': 0},
-                                'transport': {'bsonType': 'double', 'minimum': 0},
-                                'dependents': {'bsonType': ['int', 'double'], 'minimum': 0},
-                                'miscellaneous': {'bsonType': 'double', 'minimum': 0},
-                                'others': {'bsonType': 'double', 'minimum': 0},
+                                'income': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'fixed_expenses': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'variable_expenses': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'savings_goal': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'surplus_deficit': {'bsonType': ['double', 'int']},
+                                'housing': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'food': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'transport': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'dependents': {'bsonType': 'int', 'minimum': 0},
+                                'miscellaneous': {'bsonType': ['double', 'int'], 'minimum': 0},
+                                'others': {'bsonType': ['double', 'int'], 'minimum': 0},
                                 'custom_categories': {
                                     'bsonType': 'array',
                                     'items': {
@@ -134,7 +134,7 @@ def initialize_app_data(app):
                                         'required': ['name', 'amount'],
                                         'properties': {
                                             'name': {'bsonType': 'string', 'maxLength': 50},
-                                            'amount': {'bsonType': 'double', 'minimum': 0, 'maximum': 10000000000}
+                                            'amount': {'bsonType': ['double', 'int'], 'minimum': 0, 'maximum': 10000000000}
                                         },
                                         'additionalProperties': False
                                     },
@@ -157,7 +157,7 @@ def initialize_app_data(app):
                                 'user_id': {'bsonType': 'string'},
                                 'session_id': {'bsonType': ['string', 'null']},
                                 'bill_name': {'bsonType': 'string'},
-                                'amount': {'bsonType': 'double', 'minimum': 0},
+                                'amount': {'bsonType': ['double', 'int'], 'minimum': 0},
                                 'due_date': {'bsonType': 'date'},
                                 'frequency': {'bsonType': ['string', 'null']},
                                 'category': {'bsonType': ['string', 'null']},
@@ -206,7 +206,7 @@ def initialize_app_data(app):
                             'properties': {
                                 'user_id': {'bsonType': 'string'},
                                 'action': {'bsonType': 'string'},
-                                'amount': {'bsonType': 'double'},
+                                'amount': {'bsonType': ['double', 'int']},
                                 'item_id': {'bsonType': ['string', 'null']},
                                 'budget_id': {'bsonType': ['string', 'null']},
                                 'timestamp': {'bsonType': 'date'},
@@ -1123,19 +1123,21 @@ def get_ficore_credit_transactions(db, query):
         logger.error(f"Error getting Ficore Credit transactions: {str(e)}")
         return []
 
-def to_dict_ficore_credit_transaction(record):
-    """Convert Ficore Credit transaction record to dictionary."""
-    if not record:
-        return {}
+def to_dict_ficore_credit_transaction(transaction):
+    """Convert a ficore_credit_transaction document to a dictionary."""
     return {
-        '_id': str(record.get('_id', '')),
-        'user_id': record.get('user_id', ''),
-        'amount': record.get('amount', 0),
-        'type': record.get('type', ''),
-        'ref': record.get('ref', ''),
-        'payment_method': record.get('payment_method'),
-        'facilitated_by_agent': record.get('facilitated_by_agent'),
-        'date': record.get('date')
+        'user_id': str(transaction.get('user_id', '')),
+        'action': transaction.get('action', ''),
+        'amount': transaction.get('amount', 0),
+        'timestamp': transaction.get('timestamp', None),
+        'date': transaction.get('timestamp', None),  
+        'session_id': transaction.get('session_id', ''),
+        'status': transaction.get('status', ''),
+        'type': transaction.get('type', ''),
+        'ref': transaction.get('ref', ''),
+        'description': transaction.get('description', ''),
+        'payment_method': transaction.get('payment_method', None),
+        'facilitated_by_agent': transaction.get('facilitated_by_agent', None)
     }
 
 def create_feedback(db, feedback_data):
